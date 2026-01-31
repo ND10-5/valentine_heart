@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>FOR YOU❤️</title>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+html,body{
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  background:black;
+}
+canvas{
+  display:block;
+}
+#start{
+  position: fixed;
+  inset: 0;
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: pink;
+  font-size: 22px;
+  z-index: 10;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div id="start">💗 Chạm vào màn hình để bắt đầu 💗</div>
+<canvas id="canvas"></canvas>
+
+<audio id="music" loop>
+  <source src="music.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const startScreen = document.getElementById("start");
+const music = document.getElementById("music");
+
+function resizeCanvas(){
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+let showText = true;
+let showHeart = false;
+let time = 0;
+let colorTime = 0;
+let pulse = 1;
+let dkAlpha = 1;
+let dkTimer = 0;
+// ===== STARS =====
+let stars = [];
+for(let i=0;i<120;i++){
+  stars.push({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    r: Math.random()*1.6+0.3,
+    v: Math.random()*0.6+0.2
+  });
+}
+
+// ===== TEXT =====
+const messages = [
+  "Gửi đến người em thương…",
+  "Giữa hàng triệu vì sao",
+  "Anh vẫn là điều em chọn"
+];
+
+let textIndex = 0;
+let textAlpha = 0;
+let textTimer = 0;
+
+// ===== HEART =====
+let particles = [];
+
+function heart(t){
+  return {
+    x: 16 * Math.pow(Math.sin(t),3),
+    y: 13*Math.cos(t)
+      -5*Math.cos(2*t)
+      -2*Math.cos(3*t)
+      -Math.cos(4*t)
+  };
+}
+
+function createHeart(){
+  particles = [];
+  for(let t=0;t<Math.PI*2;t+=0.035){
+    let p = heart(t);
+
+    for(let i=0;i<9;i++){
+      let spread = Math.random()*2.5;
+      particles.push({
+        baseX: p.x + (Math.random()-0.5)*spread,
+        baseY: p.y + (Math.random()-0.5)*spread,
+        offset: Math.random()*Math.PI*2,
+        rise: Math.random()*canvas.height,
+        alpha: Math.random()*0.4 + 0.2,
+        size: Math.random()*2.4 + 1.2
+      });
+    }
+  }
+}
+
+// ===== DRAW =====
+function draw(){
+time += 0.01;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // nền
+  ctx.fillStyle="black";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // sao
+  for(let s of stars){
+    s.y += s.v;
+    if(s.y > canvas.height) s.y = 0;
+let twinkle = Math.sin(time + s.x) * 0.3 + 0.7;
+   ctx.fillStyle= `rgba(255,255,255,${twinkle})`;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  // ===== TEXT INTRO =====
+  if(showText){
+    textTimer++;
+
+   if(textTimer < 40) textAlpha += 0.03;
+else if(textTimer > 90) textAlpha -= 0.03;
+
+textAlpha = Math.max(0, Math.min(1, textAlpha));
+    ctx.fillStyle = `rgba(255,180,210,${textAlpha})`;
+    ctx.font = "28px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(messages[textIndex], canvas.width/2, canvas.height/2);
+
+    if(textAlpha <= 0){
+      textIndex++;
+      textTimer = 0;
+    
+      if(textIndex >= messages.length){
+showText = false;
+        showHeart = true;
+        createHeart();
+      }
+    }
+  }
+
+  // ===== HEART =====
+  if(showHeart){
+    time += 0.04;
+    colorTime += 0.02;
+
+    pulse = 1 + Math.sin(time)*0.07;
+
+    let cx = canvas.width/2;
+    let cy = canvas.height/2;
+
+    for(let p of particles){
+      p.offset += 0.06;
+      if(p.rise > 0) p.rise -= 2;
+
+      let x = cx + p.baseX*11*pulse + Math.cos(p.offset)*1.2;
+      let y = cy - p.baseY*11*pulse + Math.sin(p.offset)*1.2 + p.rise;
+
+      let r = 220 + Math.sin(colorTime)*35;
+      let g = 120 + Math.sin(colorTime+2)*40;
+      let b = 170 + Math.sin(colorTime+4)*40;
+
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = `rgba(${r},${g},${b},0.9)`;
+     let fade = Math.abs(p.baseY) - 8;
+fade = Math.max(0, Math.min(fade / 10, 1));
+
+// tăng sáng phần giữa
+let brightnessBoost = 1.5;
+
+let finalAlpha = Math.min( p.alpha * brightnessBoost * (1 - fade * 0.6),1);
+
+ctx.fillStyle = `rgba(${r},${g},${b},${finalAlpha})`;
+      ctx.beginPath();
+      ctx.arc(x,y,p.size,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    // ===== CENTER TEXT (TỰ BIẾN MẤT) =====
+dkTimer++;
+
+if (dkTimer < 360) {
+  dkAlpha = 1; // giữ 2 giây
+} else {
+  dkAlpha -= 0.005; // mờ dần
+}
+
+if (dkAlpha > 0) {
+  ctx.globalAlpha = dkAlpha;
+
+  ctx.fillStyle = "rgba(255,200,220,1)";
+  ctx.font = (32 * pulse) + "px 'Great Vibes'";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Happy valentine day", cx, cy + 6);
+
+  ctx.globalAlpha = 1;
+ }
+}
+requestAnimationFrame(draw);
+}
+// ===== START =====
+startScreen.addEventListener("click", () => {
+dkAlpha = 1;
+dkTimer = 0;
+  startScreen.style.display = "none";
+music.load();
+  music.play();
+  draw();
+});
+</script>
+
+</body>
+</html>
